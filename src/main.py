@@ -6,8 +6,15 @@ from sklearn.decomposition import PCA
 
 YEARS = ['2010', '2011', '2012', '2013', '2014', '2015']
 
-INPUT_PATH = './TDA-Dengue/data/'
-OUTPUT_PATH = "./TDA-Dengue/mappers/"
+INPUT_PATH = './TDA-Dengue/data/strict-data/'
+OUTPUT_PATH = "./TDA-Dengue/mappers/strict-data/"
+
+
+CREATED_DATA_INPUT_PATH = "./data/created-data/"
+CREATED_DATA_INPUT_FOLDERS = ["south_increase/", "north_increase/"]
+CREATED_DATA_INPUT_TYPES = ["south_increase_1", "south_increase_2",
+                            "north_increase_1", "north_increase_2"]
+CREATED_DATA_OUTPUT_PATH = "./mappers/created-data/"
 
 
 def GenerateVectors(df: pd.DataFrame):
@@ -46,8 +53,8 @@ def GenerateVectors(df: pd.DataFrame):
     return VectorList, np.array(LabelsList)
 
 
-def main(year: str):
-    DengueDataFrame = pd.read_csv(INPUT_PATH + year + "DengueData.csv")
+def main(input_path: str, output_path: str):
+    DengueDataFrame = pd.read_csv(input_path)
     VectorList, LabelsList = GenerateVectors(DengueDataFrame)
 
     NormalizedVectorList = normalize(VectorList, norm='l2')
@@ -66,8 +73,8 @@ def main(year: str):
 
         mapper.visualize(
             graph,
-            title=f"Casos de dengue no ano: {year}",
-            path_html=OUTPUT_PATH + year + f"/overlap={perc_overlap}.html",
+            title=f"Casos de dengue no ano",
+            path_html=output_path + f"/overlap={perc_overlap}.html",
             custom_tooltips=LabelsList
         )
 
@@ -75,6 +82,15 @@ def main(year: str):
 
 
 if __name__ == '__main__':
-    for year in YEARS:
-        main(year)
 
+    paths = []
+    paths.append(CREATED_DATA_INPUT_PATH + CREATED_DATA_INPUT_FOLDERS[0] + CREATED_DATA_INPUT_TYPES[0] + ".csv")
+    paths.append(CREATED_DATA_INPUT_PATH + CREATED_DATA_INPUT_FOLDERS[1] + CREATED_DATA_INPUT_TYPES[2] + ".csv")
+
+    outPaths = []
+    outPaths.append(CREATED_DATA_OUTPUT_PATH + CREATED_DATA_INPUT_FOLDERS[0])
+    outPaths.append(CREATED_DATA_OUTPUT_PATH + CREATED_DATA_INPUT_FOLDERS[1])
+
+
+    for path, out in zip(paths,outPaths):
+        main(path, out)
