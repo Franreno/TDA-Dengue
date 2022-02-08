@@ -12,9 +12,31 @@ OUTPUT_PATH = "./TDA-Dengue/mappers/strict-data/"
 
 CREATED_DATA_INPUT_PATH = "./data/created-data/"
 CREATED_DATA_INPUT_FOLDERS = ["south_increase/", "north_increase/"]
-CREATED_DATA_INPUT_TYPES = ["south_increase_1", "south_increase_2",
-                            "north_increase_1", "north_increase_2"]
+CREATED_DATA_PREFIX_TYPES = ["south", "north"]
+CREATED_DATA_INPUT_TYPES = ["_Random.csv", "_SameValue.csv"]
+
 CREATED_DATA_OUTPUT_PATH = "./mappers/created-data/"
+CREATED_DATA_OUTPUT_TYPES = ["Random/", "SameValue/"]
+
+
+CREATED_DATA_PATHS = [
+    "./data/created-data/north_increase/factors/north_factor=2.csv",
+    "./data/created-data/north_increase/factors/north_factor=4.csv",
+    "./data/created-data/north_increase/factors/north_factor=16.csv",
+    "./data/created-data/south_increase/factors/south_factor=2.csv",
+    "./data/created-data/south_increase/factors/south_factor=4.csv",
+    "./data/created-data/south_increase/factors/south_factor=16.csv"
+]
+
+CREATED_DATA_OUTPUT_PATHS = [
+    "./mappers/created-data/north_increase/Factors/north_factor=2.html",
+    "./mappers/created-data/north_increase/Factors/north_factor=4.html",
+    "./mappers/created-data/north_increase/Factors/north_factor=16.html",
+    "./mappers/created-data/south_increase/Factors/south_factor=2.html",
+    "./mappers/created-data/south_increase/Factors/south_factor=4.html",
+    "./mappers/created-data/south_increase/Factors/south_factor=16.html"
+]
+
 
 
 def GenerateVectors(df: pd.DataFrame):
@@ -59,38 +81,74 @@ def main(input_path: str, output_path: str):
 
     NormalizedVectorList = normalize(VectorList, norm='l2')
 
-    mapper = km.KeplerMapper(verbose=2)
-    perc_overlap = 0.15
+    mapper = km.KeplerMapper()
+    perc_overlap = 0.3
     n_cubes = 10
-    while(perc_overlap <= 0.45):
 
-        projected_data = mapper.project(NormalizedVectorList, projection=PCA(
-            n_components=4), distance_matrix="euclidean")
 
-        # Build a simplicial complex
-        graph = mapper.map(projected_data, NormalizedVectorList,
-                           cover=km.Cover(n_cubes=n_cubes, perc_overlap=perc_overlap))
+    print(f"FilePath: {input_path}. OutputPath: {output_path}")
 
-        mapper.visualize(
-            graph,
-            title=f"Casos de dengue no ano",
-            path_html=output_path + f"/overlap={perc_overlap}.html",
-            custom_tooltips=LabelsList
-        )
+    title_to_use = output_path.split('/')[-1].split('.')[0]
+    print(f"Process: {title_to_use}.")
 
-        perc_overlap += 0.15
+
+    projected_data = mapper.project(NormalizedVectorList, projection=PCA(
+        n_components=4), distance_matrix="euclidean")
+
+    # Build a simplicial complex
+    graph = mapper.map(projected_data, NormalizedVectorList,
+                        cover=km.Cover(n_cubes=n_cubes, perc_overlap=perc_overlap))
+
+
+    mapper.visualize(
+        graph,
+        title=title_to_use,
+        path_html=output_path,
+        custom_tooltips=LabelsList
+    )
+
+
+
+
+def create_paths_and_titles():
+    input_paths = []
+    # south_random.csv
+    input_paths.append(CREATED_DATA_INPUT_PATH +
+                       CREATED_DATA_INPUT_FOLDERS[0] + CREATED_DATA_PREFIX_TYPES[0] + CREATED_DATA_INPUT_TYPES[0])
+    # south_SameValue.csv
+    input_paths.append(CREATED_DATA_INPUT_PATH +
+                       CREATED_DATA_INPUT_FOLDERS[0] + CREATED_DATA_PREFIX_TYPES[0] + CREATED_DATA_INPUT_TYPES[1])
+
+    # north_random.csv
+    input_paths.append(CREATED_DATA_INPUT_PATH +
+                       CREATED_DATA_INPUT_FOLDERS[1] + CREATED_DATA_PREFIX_TYPES[1] + CREATED_DATA_INPUT_TYPES[0])
+    # north_SameValue.csv
+    input_paths.append(CREATED_DATA_INPUT_PATH +
+                       CREATED_DATA_INPUT_FOLDERS[1] + CREATED_DATA_PREFIX_TYPES[1] + CREATED_DATA_INPUT_TYPES[1])
+
+    output_paths = []
+
+    output_paths.append(CREATED_DATA_OUTPUT_PATH +
+                        CREATED_DATA_INPUT_FOLDERS[0] + CREATED_DATA_OUTPUT_TYPES[0])
+    output_paths.append(CREATED_DATA_OUTPUT_PATH +
+                        CREATED_DATA_INPUT_FOLDERS[0] + CREATED_DATA_OUTPUT_TYPES[1])
+    output_paths.append(CREATED_DATA_OUTPUT_PATH +
+                        CREATED_DATA_INPUT_FOLDERS[1] + CREATED_DATA_OUTPUT_TYPES[0])
+    output_paths.append(CREATED_DATA_OUTPUT_PATH +
+                        CREATED_DATA_INPUT_FOLDERS[1] + CREATED_DATA_OUTPUT_TYPES[1])
+
+    titles = []
+
+    titles.append("Random starting cases. South increase.")
+    titles.append("Starting cases = 10. South increase.")
+    titles.append("Random starting cases. North increase.")
+    titles.append("Starting cases = 10. North increase.")
+
+    return input_paths, output_paths, titles
 
 
 if __name__ == '__main__':
 
-    paths = []
-    paths.append(CREATED_DATA_INPUT_PATH + CREATED_DATA_INPUT_FOLDERS[0] + CREATED_DATA_INPUT_TYPES[0] + ".csv")
-    paths.append(CREATED_DATA_INPUT_PATH + CREATED_DATA_INPUT_FOLDERS[1] + CREATED_DATA_INPUT_TYPES[2] + ".csv")
 
-    outPaths = []
-    outPaths.append(CREATED_DATA_OUTPUT_PATH + CREATED_DATA_INPUT_FOLDERS[0])
-    outPaths.append(CREATED_DATA_OUTPUT_PATH + CREATED_DATA_INPUT_FOLDERS[1])
-
-
-    for path, out in zip(paths,outPaths):
-        main(path, out)
+    for path, outPath in zip(CREATED_DATA_PATHS, CREATED_DATA_OUTPUT_PATHS):
+        main(path, outPath)

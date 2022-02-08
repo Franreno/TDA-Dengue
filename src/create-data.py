@@ -19,8 +19,7 @@ import pandas as pd
 
 OUTPUT_PATH = './data/created-data/'
 OUTPUT_FOLDERS = ["south_increase/", "north_increase/"]
-OUTPUT_TYPES = ["south_increase_1", "south_increase_2",
-                "north_increase_1", "north_increase_2"]
+OUTPUT_TYPES = ["south_factor=", "north_factor="]
 CITIES_LAT_LNG = "./data/cities-lat-lng.csv"
 
 #-22.280636, -42.532351
@@ -31,8 +30,7 @@ weeks = np.linspace(1, 52, 52, dtype=int)
 
 SEED = 31415926
 
-starting_cases = 0
-np.random.seed(SEED)
+starting_cases = 10
 
 cols = list(weeks)
 cols.insert(0, "Lng")
@@ -42,7 +40,6 @@ cols.insert(0, "City")
 
 def create_data_with_factor(city: str, latlng: list, factor=2) -> list:
 
-    starting_cases = np.random.randint(low=10, high=100)
 
     l = [starting_cases*(factor*week) for week in weeks]
     l.insert(0, latlng[1])
@@ -54,7 +51,6 @@ def create_data_with_factor(city: str, latlng: list, factor=2) -> list:
 
 def create_data_with_constant(city: str, latlng: list, constant=1) -> list:
 
-    starting_cases = np.random.randint(low=10, high=100)
 
     l = [starting_cases+(constant + week) for week in weeks]
     l.insert(0, latlng[1])
@@ -64,54 +60,61 @@ def create_data_with_constant(city: str, latlng: list, constant=1) -> list:
     return l
 
 
-def south_increase_1(data, constant=1):
+def south_increase(data, constant=1):
     """
         Below limit increase by a factor of 2.
         Above limit increase by a constant value.
     """
+    factor = 2
 
-    mainList = []
+    counter = 0
+    while(counter != 3):
+        mainList = []
 
-    for city in data['Cities']:
-        city_latitude = data[city][0]
+        for city in data['Cities']:
+            city_latitude = data[city][0]
 
-        # -23.006 < -22.28
-        if(city_latitude <= LATITUDE_LIMIT):
-            mainList.append(create_data_with_factor(city, data[city]))
-        else:
-            mainList.append(create_data_with_constant(city, data[city]))
+            # -23.006 < -22.28
+            if(city_latitude <= LATITUDE_LIMIT):
+                mainList.append(create_data_with_factor(city, data[city], factor=factor))
+            else:
+                mainList.append(create_data_with_constant(city, data[city]))
 
-    df = pd.DataFrame(mainList, columns=cols)
-    df.to_csv(OUTPUT_PATH + OUTPUT_FOLDERS[0] + OUTPUT_TYPES[0] + ".csv")
+        df = pd.DataFrame(mainList, columns=cols)
+        out_type = OUTPUT_TYPES[0] + str(factor)
+        df.to_csv(OUTPUT_PATH + OUTPUT_FOLDERS[0] + "/factors/" + out_type + ".csv")
+        factor *= factor
+        counter += 1
 
 
-def south_increase_2(data, constant=1):
-    pass
 
 
-def north_increase_1(data, constant=1):
+def north_increase(data, constant=1):
     """
         Above limit increase by a factor of 2.
         Below limit increase by a constant value.
     """
 
-    mainList = []
+    factor = 2
 
-    for city in data['Cities']:
-        city_latitude = data[city][0]
+    counter = 0
+    while(counter != 3):
+        mainList = []
 
-        # -23.006 > -22.28
-        if(city_latitude >= LATITUDE_LIMIT):
-            mainList.append(create_data_with_factor(city, data[city]))
-        else:
-            mainList.append(create_data_with_constant(city, data[city]))
+        for city in data['Cities']:
+            city_latitude = data[city][0]
 
-    df = pd.DataFrame(mainList, columns=cols)
-    df.to_csv(OUTPUT_PATH + OUTPUT_FOLDERS[1] + OUTPUT_TYPES[2] + ".csv")
+            # -23.006 > -22.28
+            if(city_latitude >= LATITUDE_LIMIT):
+                mainList.append(create_data_with_factor(city, data[city], factor=factor))
+            else:
+                mainList.append(create_data_with_constant(city, data[city]))
 
-
-def north_increase_2(data, constant=1):
-    pass
+        df = pd.DataFrame(mainList, columns=cols)
+        out_type = OUTPUT_TYPES[1] + str(factor)
+        df.to_csv(OUTPUT_PATH + OUTPUT_FOLDERS[1] + "/factors/" + out_type + ".csv")
+        factor *= factor
+        counter += 1
 
 
 def to_dict(dataframe: pd.DataFrame) -> dict:
@@ -130,7 +133,7 @@ if __name__ == '__main__':
 
     data = to_dict(citites_csv)
 
-    south_increase_1(data)
+    south_increase(data)
     # south_increase_2(data)
-    north_increase_1(data)
+    north_increase(data)
     # north_increase_2(data)
