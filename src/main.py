@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import kmapper as km
 from sklearn.decomposition import PCA
+from sklearn.cluster import DBSCAN
 
 YEARS = ['2010', '2011', '2012', '2013', '2014', '2015']
 
@@ -79,10 +80,10 @@ def main(input_path: str, output_path: str):
     DengueDataFrame = pd.read_csv(input_path)
     VectorList, LabelsList = GenerateVectors(DengueDataFrame)
 
-    NormalizedVectorList = normalize(VectorList, norm='l2')
+    NormalizedVectorList = normalize(VectorList, norm='l2', axis=0)
 
     mapper = km.KeplerMapper()
-    perc_overlap = 0.3
+    perc_overlap = 0.15
     n_cubes = 10
 
 
@@ -92,12 +93,19 @@ def main(input_path: str, output_path: str):
     print(f"Process: {title_to_use}.")
 
 
-    projected_data = mapper.project(NormalizedVectorList, projection=PCA(
-        n_components=4), distance_matrix="euclidean")
+    lens = mapper.fit_transform(
+        NormalizedVectorList, 
+        projection=PCA(),
+    )
+
+    # projected_data = mapper.project(NormalizedVectorList, projection=PCA(
+        # n_components=4), distance_matrix="euclidean")
 
     # Build a simplicial complex
-    graph = mapper.map(projected_data, NormalizedVectorList,
-                        cover=km.Cover(n_cubes=n_cubes, perc_overlap=perc_overlap))
+    graph = mapper.map(lens, NormalizedVectorList,
+                        cover=km.Cover(n_cubes=n_cubes, perc_overlap=perc_overlap),
+                        clusterer= DBSCAN()
+                        )
 
 
     mapper.visualize(
@@ -148,7 +156,22 @@ def create_paths_and_titles():
 
 
 if __name__ == '__main__':
+    inputs_prefix = './data/strict-data/'
+    inputs_sufix = 'DengueData.csv'
+    output_prefix = './mappers/strict-data/'
+    output_sufix = 'DengueData.html'
+    years = ['2010', '2011', '2012', '2013', '2014', '2015']
 
 
-    for path, outPath in zip(CREATED_DATA_PATHS, CREATED_DATA_OUTPUT_PATHS):
+    inputs = []
+    outputs = []
+    for year in years:
+        inputs.append(inputs_prefix + year + inputs_sufix)
+        outputs.append(output_prefix + year + '/' + year + output_sufix)
+    
+    print(inputs, outputs)
+
+
+
+    for path, outPath in zip(inputs, outputs):
         main(path, outPath)

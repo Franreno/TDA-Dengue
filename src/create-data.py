@@ -13,6 +13,7 @@
     
 """
 
+from random import randint, random
 import numpy as np
 import pandas as pd
 
@@ -30,7 +31,7 @@ weeks = np.linspace(1, 52, 52, dtype=int)
 
 SEED = 31415926
 
-starting_cases = 10
+global starting_cases
 
 cols = list(weeks)
 cols.insert(0, "Lng")
@@ -40,6 +41,8 @@ cols.insert(0, "City")
 
 def create_data_with_factor(city: str, latlng: list, factor=2) -> list:
 
+    # print(starting_cases)
+    # exit()
 
     l = [starting_cases*(factor*week) for week in weeks]
     l.insert(0, latlng[1])
@@ -69,9 +72,15 @@ def south_increase(data, constant=1):
 
     counter = 0
     while(counter != 3):
+
+        
         mainList = []
 
         for city in data['Cities']:
+
+            global starting_cases
+            starting_cases = np.random.randint(100)
+            
             city_latitude = data[city][0]
 
             # -23.006 < -22.28
@@ -82,7 +91,7 @@ def south_increase(data, constant=1):
 
         df = pd.DataFrame(mainList, columns=cols)
         out_type = OUTPUT_TYPES[0] + str(factor)
-        df.to_csv(OUTPUT_PATH + OUTPUT_FOLDERS[0] + "/factors/" + out_type + ".csv")
+        df.to_csv(OUTPUT_PATH + OUTPUT_FOLDERS[0] + "/random/" + out_type + ".csv")
         factor *= factor
         counter += 1
 
@@ -102,6 +111,9 @@ def north_increase(data, constant=1):
         mainList = []
 
         for city in data['Cities']:
+
+            global starting_cases
+            starting_cases = np.random.randint(100)
             city_latitude = data[city][0]
 
             # -23.006 > -22.28
@@ -112,7 +124,7 @@ def north_increase(data, constant=1):
 
         df = pd.DataFrame(mainList, columns=cols)
         out_type = OUTPUT_TYPES[1] + str(factor)
-        df.to_csv(OUTPUT_PATH + OUTPUT_FOLDERS[1] + "/factors/" + out_type + ".csv")
+        df.to_csv(OUTPUT_PATH + OUTPUT_FOLDERS[1] + "/random/" + out_type + ".csv")
         factor *= factor
         counter += 1
 
