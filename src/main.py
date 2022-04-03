@@ -4,6 +4,7 @@ import numpy as np
 import kmapper as km
 from sklearn.decomposition import PCA
 from sklearn.cluster import DBSCAN
+from sklearn.manifold import TSNE
 
 YEARS = ['2010', '2011', '2012', '2013', '2014', '2015']
 
@@ -82,8 +83,8 @@ def main(input_path: str, output_path: str):
 
     NormalizedVectorList = normalize(VectorList, norm='l2', axis=0)
 
-    mapper = km.KeplerMapper()
-    perc_overlap = 0.15
+    mapper = km.KeplerMapper(verbose=2)
+    perc_overlap = 0.17
     n_cubes = 10
 
 
@@ -98,11 +99,8 @@ def main(input_path: str, output_path: str):
         projection=PCA(),
     )
 
-    # projected_data = mapper.project(NormalizedVectorList, projection=PCA(
-        # n_components=4), distance_matrix="euclidean")
-
     # Build a simplicial complex
-    graph = mapper.map(lens, NormalizedVectorList,
+    graph = mapper.map(NormalizedVectorList,
                         cover=km.Cover(n_cubes=n_cubes, perc_overlap=perc_overlap),
                         clusterer= DBSCAN()
                         )
@@ -169,9 +167,14 @@ if __name__ == '__main__':
         inputs.append(inputs_prefix + year + inputs_sufix)
         outputs.append(output_prefix + year + '/' + year + output_sufix)
     
-    print(inputs, outputs)
 
+    DengueDataFrame = pd.read_csv(inputs[0])
+    VectorList, LabelsList = GenerateVectors(DengueDataFrame)
 
+    NormalizedVectorList = normalize(VectorList, norm='l2', axis=0)
 
-    for path, outPath in zip(inputs, outputs):
-        main(path, outPath)
+    print(NormalizedVectorList)
+
+    # for path, outPath in zip(inputs, outputs):
+    #     main(path, outPath)
+    #     break
