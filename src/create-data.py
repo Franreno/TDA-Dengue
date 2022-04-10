@@ -1,151 +1,69 @@
-"""
-    Create fictional data to see how the topological structure will be generated
-    - south_increase: 
-        Cities below certain latitude will have their cases increased by a factor of 2, while cities above
-        given latitude will increase by a constant value
-    - north_increase:
-        Inverse of south_increase.
-
-
-    The latitude and longitude chosen will be the geodesic point of the Rio de Janeiro state.
-    - O ponto geodésico aos pés de Getúlio Vargas, na mesma praça, que representa o ponto exato 
-      onde fica o centro do estado do Rio de Janeiro.
-    
-"""
-
-from random import randint, random
-import numpy as np
 import pandas as pd
+import numpy as np
 
+COLS = ['City', 'Lat', 'Lng', 'Population', 'IDHM', 'PIB']
 
-OUTPUT_PATH = './data/created-data/'
-OUTPUT_FOLDERS = ["south_increase/", "north_increase/"]
-OUTPUT_TYPES = ["south_factor=", "north_factor="]
-CITIES_LAT_LNG = "./data/cities-lat-lng.csv"
+datapath = "../data/cities-lat-lng.csv"
+output = "../data/Cities-Data.csv"
+fullcitiespath = "../data/fullcitiesdata.xlsx"
 
-#-22.280636, -42.532351
-LATITUDE_LIMIT = -22.280636
-LONGITUDE_LIMIT = -42.532351
+dataframe = pd.read_csv(datapath)
 
-weeks = np.linspace(1, 52, 52, dtype=int)
+fullcitiesDataframe = pd.read_excel(fullcitiespath)
 
-SEED = 31415926
+citiesColumns = fullcitiesDataframe.columns
+fullcitiesDataframe = fullcitiesDataframe[
+    [
+        citiesColumns[0], 
+        citiesColumns[5], 
+        citiesColumns[8],  
+        citiesColumns[-1]
+    ]
+]
 
-global starting_cases
+fullcitiesDataframe = fullcitiesDataframe.rename(columns={
+    citiesColumns[0]: COLS[0],
+    citiesColumns[5]: COLS[3],
+    citiesColumns[8]: COLS[4],
+    citiesColumns[-1]: COLS[5]
+})
 
-cols = list(weeks)
-cols.insert(0, "Lng")
-cols.insert(0, "Lat")
-cols.insert(0, "City")
+newDataDict = {}
+latlngDict = {}
 
-
-def create_data_with_factor(city: str, latlng: list, factor=2) -> list:
-
-    # print(starting_cases)
-    # exit()
-
-    l = [starting_cases*(factor*week) for week in weeks]
-    l.insert(0, latlng[1])
-    l.insert(0, latlng[0])
-    l.insert(0, city)
-
-    return l
-
-
-def create_data_with_constant(city: str, latlng: list, constant=1) -> list:
-
-
-    l = [starting_cases+(constant + week) for week in weeks]
-    l.insert(0, latlng[1])
-    l.insert(0, latlng[0])
-    l.insert(0, city)
-
-    return l
-
-
-def south_increase(data, constant=1):
-    """
-        Below limit increase by a factor of 2.
-        Above limit increase by a constant value.
-    """
-    factor = 2
-
-    counter = 0
-    while(counter != 3):
-
-        
-        mainList = []
-
-        for city in data['Cities']:
-
-            global starting_cases
-            starting_cases = np.random.randint(100)
-            
-            city_latitude = data[city][0]
-
-            # -23.006 < -22.28
-            if(city_latitude <= LATITUDE_LIMIT):
-                mainList.append(create_data_with_factor(city, data[city], factor=factor))
-            else:
-                mainList.append(create_data_with_constant(city, data[city]))
-
-        df = pd.DataFrame(mainList, columns=cols)
-        out_type = OUTPUT_TYPES[0] + str(factor)
-        df.to_csv(OUTPUT_PATH + OUTPUT_FOLDERS[0] + "/random/" + out_type + ".csv")
-        factor *= factor
-        counter += 1
-
-
-
-
-def north_increase(data, constant=1):
-    """
-        Above limit increase by a factor of 2.
-        Below limit increase by a constant value.
-    """
-
-    factor = 2
-
-    counter = 0
-    while(counter != 3):
-        mainList = []
-
-        for city in data['Cities']:
-
-            global starting_cases
-            starting_cases = np.random.randint(100)
-            city_latitude = data[city][0]
-
-            # -23.006 > -22.28
-            if(city_latitude >= LATITUDE_LIMIT):
-                mainList.append(create_data_with_factor(city, data[city], factor=factor))
-            else:
-                mainList.append(create_data_with_constant(city, data[city]))
-
-        df = pd.DataFrame(mainList, columns=cols)
-        out_type = OUTPUT_TYPES[1] + str(factor)
-        df.to_csv(OUTPUT_PATH + OUTPUT_FOLDERS[1] + "/random/" + out_type + ".csv")
-        factor *= factor
-        counter += 1
-
-
-def to_dict(dataframe: pd.DataFrame) -> dict:
-    data = {
-        'Cities': list(dataframe['City'])
+for index, city in enumerate(fullcitiesDataframe['City']):
+    _newData = fullcitiesDataframe.iloc[index]
+    newDataDict[city] = {
+        'Population': _newData[1],
+        'IDHM': _newData[2],
+        'PIB': _newData[3]
     }
-    for city, lat, lng in zip(dataframe["City"], dataframe["Lat"], dataframe["Lng"]):
-        data[city] = [lat, lng]
 
-    return data
+for index, city in enumerate(dataframe['City']):
+    _newData = dataframe.iloc[index]
+
+    latlngDict[city] = {
+        'Lat': _newData[2],
+        'Lng': _newData[3] 
+    }
 
 
-if __name__ == '__main__':
 
-    citites_csv = pd.read_csv(CITIES_LAT_LNG)
+finalList = []
 
-    data = to_dict(citites_csv)
+citiesList = dataframe['City']
+for index, city in enumerate(citiesList):
+    finalList.append(
+        [
+            city, 
+            latlngDict[city]['Lat'], 
+            latlngDict[city]['Lng'],
+            newDataDict[city]['Population'],
+            newDataDict[city]['IDHM'],
+            newDataDict[city]['PIB']
+        ]
+    )
 
-    south_increase(data)
-    # south_increase_2(data)
-    north_increase(data)
-    # north_increase_2(data)
+
+dff = pd.DataFrame(finalList, columns=COLS)
+dff.to_csv(output)
