@@ -1,10 +1,11 @@
-from sklearn.preprocessing import normalize
+from sklearn.preprocessing import normalize, StandardScaler
 import pandas as pd
 import numpy as np
 import kmapper as km
 from sklearn.decomposition import PCA
 from sklearn.cluster import DBSCAN
 from sklearn.manifold import TSNE
+from sklearn import ensemble
 
 YEARS = ['2010', '2011', '2012', '2013', '2014', '2015']
 
@@ -65,15 +66,21 @@ def GenerateVectors(df: pd.DataFrame):
     return VectorList, np.array(LabelsList)
 
 
-def main(input_path: str, output_path: str):
+def main(input_path: str, output_path: str, perc=0.15, cubes=10):
+
+    __PCA = False
+
     DengueDataFrame = pd.read_csv(input_path)
     VectorList, LabelsList = GenerateVectors(DengueDataFrame)
 
     NormalizedVectorList = normalize(VectorList, norm='l2', axis=0)
 
-    mapper = km.KeplerMapper()
-    perc_overlap = 0.15
-    n_cubes = 10
+    if(__PCA == True):
+        NormalizedVectorList = StandardScaler().fit_transform(NormalizedVectorList)
+
+    mapper = km.KeplerMapper(verbose=3)
+    perc_overlap = perc
+    n_cubes = cubes
 
 
     print(f"FilePath: {input_path}. OutputPath: {output_path}")
@@ -82,13 +89,14 @@ def main(input_path: str, output_path: str):
     print(f"Process: {title_to_use}.")
 
 
-    lens = mapper.fit_transform(
-        NormalizedVectorList, 
-        projection=PCA(),
-    )
+    # lens = mapper.project(
+    #     NormalizedVectorList, 
+    #     projection=[2,3],
+    #     # scaler=StandardScaler()
+    # )
 
     # Build a simplicial complex
-    graph = mapper.map(lens,
+    graph = mapper.map(NormalizedVectorList,
                         cover=km.Cover(n_cubes=n_cubes, perc_overlap=perc_overlap),
                         clusterer= DBSCAN()
                         )
@@ -106,10 +114,9 @@ if __name__ == '__main__':
     inputs_prefix = './data/strict-data/'
     inputs_sufix = 'DengueData.csv'
     output_prefix = './mappers/strict-data/'
-    output_sufix = 'DengueData-IDHM-PIB.html'
+    output_sufix = 'DengueData-PIB.html'
     years = ['2010', '2011', '2012', '2013', '2014', '2015']
     
-
 
     inputs = []
     outputs = []
@@ -118,13 +125,14 @@ if __name__ == '__main__':
         outputs.append(output_prefix + year + '/' + year + output_sufix)
     
 
-    DengueDataFrame = pd.read_csv(inputs[0])
-    VectorList, LabelsList = GenerateVectors(DengueDataFrame)
+    
+    main(inputs[0], outputs[0], cubes=10, perc=0.15)
+    # main(inputs[2], outputs[2], cubes=10)
+    # inputs.pop(0)
+    # outputs.pop(0)
 
-    NormalizedVectorList = normalize(VectorList, norm='l2', axis=0)
+    # main(inputs[1], outputs[1])
 
-    # main(inputs[0],outputs[0])
-
-    for path, outPath in zip(inputs, outputs):
-        main(path, outPath)
-
+    # for path, outPath in zip(inputs, outputs):
+        # main(path, outPath)
+        
