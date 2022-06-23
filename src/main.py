@@ -50,7 +50,7 @@ def GenerateVectors(df: pd.DataFrame):
            
             # IDHM
             Vector.append(CityIDHM)
-
+# 
             # PIB
             Vector.append(CityPIB)
 
@@ -66,7 +66,7 @@ def GenerateVectors(df: pd.DataFrame):
     return VectorList, np.array(LabelsList)
 
 
-def main(input_path: str, output_path: str, perc=0.15, cubes=10):
+def main(input_path: str, output_path: str, perc=0.17, cubes=10):
 
     __PCA = False
 
@@ -91,7 +91,7 @@ def main(input_path: str, output_path: str, perc=0.15, cubes=10):
 
     # lens = mapper.project(
     #     NormalizedVectorList, 
-    #     projection=[2,3],
+    #     projection=[4],
     #     # scaler=StandardScaler()
     # )
 
@@ -114,7 +114,7 @@ if __name__ == '__main__':
     inputs_prefix = './data/strict-data/'
     inputs_sufix = 'DengueData.csv'
     output_prefix = './mappers/strict-data/'
-    output_sufix = 'DengueData-PIB.html'
+    output_sufix = 'DengueData-IDHM-PIB.html'
     years = ['2010', '2011', '2012', '2013', '2014', '2015']
     
 
@@ -126,13 +126,13 @@ if __name__ == '__main__':
     
 
     
-    main(inputs[0], outputs[0], cubes=10, perc=0.15)
+    # main(inputs[0], outputs[0], cubes=10, perc=0.5)
     # main(inputs[2], outputs[2], cubes=10)
     # inputs.pop(0)
     # outputs.pop(0)
 
     # main(inputs[1], outputs[1])
 
-    # for path, outPath in zip(inputs, outputs):
-        # main(path, outPath)
+    for path, outPath in zip(inputs, outputs):
+        main(path, outPath)
         
