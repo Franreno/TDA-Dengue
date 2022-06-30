@@ -11,6 +11,10 @@ YEARS = ['2010', '2011', '2012', '2013', '2014', '2015']
 
 additionalDataPath = './data/Cities-Data.csv'
 
+def per100k(n: int, citypop) -> float:
+    return((n/citypop)*100000)
+
+
 def GenerateVectors(df: pd.DataFrame):
     # p = (x,y,w,t,z) = (Latitude, Longitude, Quantidade de casos acumulados, IDHM, Semana).
 
@@ -41,7 +45,7 @@ def GenerateVectors(df: pd.DataFrame):
             # Longitude
             Vector.append(CityLng)
             # Acumula a quantidade de casos
-            cummulative += int(row[str(i)])
+            cummulative += per100k(int(row[str(i)]), CityPop)
             # Adiciona no Vector
             Vector.append(cummulative)
 
@@ -49,10 +53,10 @@ def GenerateVectors(df: pd.DataFrame):
             # Vector.append(CityPop)
            
             # IDHM
-            Vector.append(CityIDHM)
+            # Vector.append(CityIDHM)
 # 
             # PIB
-            Vector.append(CityPIB)
+            # Vector.append(CityPIB)
 
 
             # Semana
@@ -61,7 +65,7 @@ def GenerateVectors(df: pd.DataFrame):
             VectorList.append(Vector)
 
             # Criar o label para esse vector
-            LabelsList.append(f"{city}, Casos: {cummulative}, Semana: {i}")
+            LabelsList.append(f"{city}, Casos/100mil: {cummulative}, Semana: {i}")
 
     return VectorList, np.array(LabelsList)
 
@@ -114,7 +118,7 @@ if __name__ == '__main__':
     inputs_prefix = './data/strict-data/'
     inputs_sufix = 'DengueData.csv'
     output_prefix = './mappers/strict-data/'
-    output_sufix = 'DengueData-IDHM-PIB.html'
+    output_sufix = 'DengueData-per100k.html'
     years = ['2010', '2011', '2012', '2013', '2014', '2015']
     
 
@@ -126,7 +130,7 @@ if __name__ == '__main__':
     
 
     
-    # main(inputs[0], outputs[0], cubes=10, perc=0.5)
+    # main(inputs[0], outputs[0])
     # main(inputs[2], outputs[2], cubes=10)
     # inputs.pop(0)
     # outputs.pop(0)
