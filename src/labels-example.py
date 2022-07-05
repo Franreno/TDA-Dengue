@@ -2,6 +2,7 @@
 Francisco Reis Nogueira
 github: @franreno
 
+Como utilizar os labels em conjunto com o KeplerMapper:
 Para juntar os Labels com o Mapper eh necessario criar uma 
 nuvem de pontos juntamente com os labels para cada ponto.
 
