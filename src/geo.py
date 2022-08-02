@@ -2,8 +2,10 @@ from sklearn.preprocessing import normalize, StandardScaler
 import pandas as pd
 import numpy as np
 import kmapper as km
-from sklearn.decomposition import PCA
 from sklearn.cluster import DBSCAN
+
+
+from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 from sklearn import ensemble
 
