@@ -14,6 +14,7 @@ To-Do:
 from typing import OrderedDict, Union
 from sklearn.preprocessing import normalize, StandardScaler
 from sklearn.cluster import DBSCAN
+from sklearn.decomposition import PCA
 import pandas as pd
 import numpy as np
 import kmapper as km
@@ -114,6 +115,7 @@ def readAndCreateData() -> OrderedDict:
             mergedData[city][YEARS[index]]['Populacao'] = citiesIndexed.loc[city]['Population']
             mergedData[city][YEARS[index]]['TurismoDomestico'] = socialIndexed.loc[city]['Domésticos']
             mergedData[city][YEARS[index]]['TurismoInternacional'] = socialIndexed.loc[city]['Internacionais']
+            mergedData[city][YEARS[index]]['RendaPerCapita'] = socialIndexed.loc[city]["Renda per capita"]
             mergedData[city][YEARS[index]]['Casos'] = list(yearIndexed.loc[city][1:53])
         
     return mergedData
@@ -127,6 +129,8 @@ def createVectors(data: OrderedDict, year: str, analysisType: int) -> Union[np.n
         Cada vetor pode possuir de 4 a 5 features, dependendo do tipo de analise feita.
 
         p = (x,y,z,w) = (PIB, Turismo, Casos Ate a semana x, semana x)
+        (PIB, Renda, Turismos, Casos Ate a semana x, semana x)
+
 
         O tipo de analise pode variar sendo:
             1: Turismo domestico
@@ -152,6 +156,9 @@ def createVectors(data: OrderedDict, year: str, analysisType: int) -> Union[np.n
             # PIB
             Vector.append( thisCityDict['PIB'] )
 
+            # Renda per capita
+            Vector.append( thisCityDict['RendaPerCapita'] )
+
             # Turismo Domestico
             if(analysisType == 1 or analysisType == 3):
                 Vector.append( thisCityDict['TurismoDomestico'] )
@@ -174,15 +181,15 @@ def createVectors(data: OrderedDict, year: str, analysisType: int) -> Union[np.n
 
             # Se usou domestico
             if(analysisType == 1):
-                label = f"{city}, Casos/100k: {cummulative}, Semana: {i}, TDomestico: {thisCityDict['TurismoDomestico']}, PIB: {thisCityDict['PIB']}"
+                label = f"{city}, Casos/100k: {cummulative}, Semana: {i}, TDomestico: {thisCityDict['TurismoDomestico']}, PIB: {thisCityDict['PIB']}, Renda Per Capita: {thisCityDict['RendaPerCapita']}"
 
             # Se usou internacional
             if(analysisType == 2):
-                label = f"{city}, Casos/100k: {cummulative}, Semana: {i}, TInternacional: {thisCityDict['TurismoInternacional']}, PIB: {thisCityDict['PIB']}"
+                label = f"{city}, Casos/100k: {cummulative}, Semana: {i}, TInternacional: {thisCityDict['TurismoInternacional']}, PIB: {thisCityDict['PIB']}, Renda Per Capita: {thisCityDict['RendaPerCapita']}"
 
             # Se usou os dois
             if(analysisType == 3):
-                label = f"{city}, Casos/100k: {cummulative}, Semana: {i}, TDomestico: {thisCityDict['TurismoDomestico']}, TInternacional: {thisCityDict['TurismoInternacional']}, PIB: {thisCityDict['PIB']}"
+                label = f"{city}, Casos/100k: {cummulative}, Semana: {i}, TDomestico: {thisCityDict['TurismoDomestico']}, TInternacional: {thisCityDict['TurismoInternacional']}, PIB: {thisCityDict['PIB']}, Renda Per Capita: {thisCityDict['RendaPerCapita']}"
 
 
             LabelList.append(label)
@@ -233,16 +240,18 @@ def generateMapper(NPC: np.ndarray, Labels: np.ndarray, year: str, analysisType:
 
 
     # Definicao da funcao de projecao
+    # Testar o PCA
+    # E testar projecoes nas featues (Turismo, ou Renda)
 
-    # lens = mapper.project(
-    #     NormalizedVectorList, 
-    #     projection=[4],
-    #     # scaler=StandardScaler()
-    # )
+    lens = mapper.project(
+        NPC, 
+        projection=PCA(),
+        # scaler=StandardScaler()
+    )
 
     # Criar um complexo simplicial
     # Utilizar 'lens' ao inves de 'NPC' caso seja utilizado o mapper.project acima
-    graph = mapper.map(NPC,
+    graph = mapper.map(lens,
                         cover=km.Cover(n_cubes=n_cubes, perc_overlap=perc_overlap),
                         clusterer= DBSCAN()
                         )
@@ -258,6 +267,9 @@ def generateMapper(NPC: np.ndarray, Labels: np.ndarray, year: str, analysisType:
 #---------------------------------------------------------------------------------------------------------------#
 
 def main():
+
+    __PCA = True
+
     # Ano da analise
     analisedYear = '2011'
     
@@ -279,6 +291,9 @@ def main():
     
     # Normaliza a nuvem de pontos
     normalizedPointCloud = normalize(pointCloud, norm='l2', axis=0)
+
+    if(__PCA == True):
+        normalizedPointCloud = StandardScaler().fit_transform(normalizedPointCloud)
 
     # Aplica o algoritmo mapper e gera uma visualizacao
     generateMapper(normalizedPointCloud, Labels, analisedYear, analisysType, perc_overlap, n_cubes)
