@@ -31,9 +31,8 @@ citiesPath = workingDirectory + '/data/Cities-Data.csv'
 socialPath = workingDirectory + '/data/moreInfo.csv' 
 denguePath = [workingDirectory + f'/data/strict-data/{year}DengueData.csv' for year in YEARS] 
 
-domesticoOutputPaths = [workingDirectory + f'/mappers/strict-data/{year}/{year}DengueComTurismoDomestico.html' for year in YEARS]
-internacionalOutputPaths = [workingDirectory + f'/mappers/strict-data/{year}/{year}DengueComTurismoInternacional.html' for year in YEARS]
-ambosOutputPaths = [workingDirectory + f'/mappers/strict-data/{year}/{year}DengueSEMPROJECAO.html' for year in YEARS]
+comTurismoOutputPaths = [workingDirectory + f'/mappers/strict-data/{year}/{year}DengueComTurismo.html' for year in YEARS]
+semTurismoOutputPaths = [workingDirectory + f'/mappers/strict-data/{year}/{year}DengueSemTurismo.html' for year in YEARS]
 
 
 
@@ -79,7 +78,9 @@ def readAndCreateData() -> OrderedDict:
 
     citiesData = pd.read_csv(citiesPath) 
     socialData = pd.read_csv(socialPath)
-    socialData.rename( columns={'Unnamed: 0': 'City'}, inplace=True )
+    socialData.rename( columns={'Unnamed: 0': 'City', \
+    'Escolarização <span>6 a 14 anos</span> - % [2010]': 'Escolarizacao', \
+    'Mortalidade infantil - óbitos por mil nascidos vivos [2019]': 'MortInf'}, inplace=True )
     dengueData = [ pd.read_csv(year).drop(['Lat', 'Lng'], axis=1) for year in denguePath ]
     
     # Padronizar os nomes das cidades do rio
@@ -93,6 +94,16 @@ def readAndCreateData() -> OrderedDict:
     socialData['Internacionais'] = socialData['Internacionais'].fillna(0)
     socialData['Renda per capita'] = socialData['Renda per capita'].fillna(0)
     
+    socialData['Escolarizacao'] = socialData['Escolarizacao'].fillna(0)
+    for index, ele in enumerate(socialData['Escolarizacao']):
+        if(ele == '-'):
+            socialData['Escolarizacao'][index] = 0
+
+
+    socialData['MortInf'] = socialData['MortInf'].fillna(0)
+    for index, ele in enumerate(socialData['MortInf']):
+        if(ele == '-'):
+            socialData['MortInf'][index] = 0
 
     # Popular o dict final com os subdicts
     citiesNameList = citiesData['City']
@@ -117,6 +128,8 @@ def readAndCreateData() -> OrderedDict:
             mergedData[city][YEARS[index]]['TurismoDomestico'] = socialIndexed.loc[city]['Domésticos']
             mergedData[city][YEARS[index]]['TurismoInternacional'] = socialIndexed.loc[city]['Internacionais']
             mergedData[city][YEARS[index]]['RendaPerCapita'] = socialIndexed.loc[city]["Renda per capita"]
+            mergedData[city][YEARS[index]]['Escolarizacao'] = socialIndexed.loc[city]["Escolarizacao"]
+            mergedData[city][YEARS[index]]['MortInf'] = socialIndexed.loc[city]["MortInf"]
             mergedData[city][YEARS[index]]['Casos'] = list(yearIndexed.loc[city][1:53])
         
     return mergedData
@@ -154,19 +167,21 @@ def createVectors(data: OrderedDict, year: str, analysisType: int) -> Union[np.n
         for i in range(0,52):
             Vector = []
             
-            # PIB
-            Vector.append( thisCityDict['PIB'] )
+
+            # % Escolarizacao
+            Vector.append( thisCityDict['Escolarizacao'] )
+
+            # Mortalidade infantil por 1000mil
+            Vector.append( float(thisCityDict['MortInf']) )
 
             # Renda per capita
             Vector.append( thisCityDict['RendaPerCapita'] )
 
-            # Turismo Domestico
-            if(analysisType == 1 or analysisType == 3):
+            # Analise com turismo
+            if(analysisType == 1):
                 Vector.append( thisCityDict['TurismoDomestico'] )
-
-            # Turismo Internacional
-            if(analysisType == 2 or analysisType == 3):
                 Vector.append( thisCityDict['TurismoInternacional'] )
+
 
             # Casos acumulados
             cummulative += per100k( int(thisCityDict['Casos'][i]), thisCityPopulation )
@@ -182,15 +197,23 @@ def createVectors(data: OrderedDict, year: str, analysisType: int) -> Union[np.n
 
             # Se usou domestico
             if(analysisType == 1):
-                label = f"{city}, Casos/100k: {cummulative}, Semana: {i}, TDomestico: {thisCityDict['TurismoDomestico']}, PIB: {thisCityDict['PIB']}, Renda Per Capita: {thisCityDict['RendaPerCapita']}"
+                label = f"{city}, Casos/100k: {cummulative}, \
+                Semana: {i},  \
+                TDomestico: {thisCityDict['TurismoDomestico']}, \
+                TInternacional: {thisCityDict['TurismoInternacional']}, \
+                Renda Per Capita: {thisCityDict['RendaPerCapita']}, \
+                Escolarização: {thisCityDict['Escolarizacao']}, \
+                Mortalidade Inf: {thisCityDict['MortInf']} \n \
+                    ------------------------------------"
 
             # Se usou internacional
             if(analysisType == 2):
-                label = f"{city}, Casos/100k: {cummulative}, Semana: {i}, TInternacional: {thisCityDict['TurismoInternacional']}, PIB: {thisCityDict['PIB']}, Renda Per Capita: {thisCityDict['RendaPerCapita']}"
-
-            # Se usou os dois
-            if(analysisType == 3):
-                label = f"{city}, Casos/100k: {cummulative}, Semana: {i}, TDomestico: {thisCityDict['TurismoDomestico']}, TInternacional: {thisCityDict['TurismoInternacional']}, PIB: {thisCityDict['PIB']}, Renda Per Capita: {thisCityDict['RendaPerCapita']}"
+                label = f"{city}, Casos/100k: {cummulative}, \
+                Semana: {i},  \
+                Renda Per Capita: {thisCityDict['RendaPerCapita']}, \
+                Escolarização: {thisCityDict['Escolarizacao']}, \
+                Mortalidade Inf: {thisCityDict['MortInf']} \n \
+                    -----------------------------------"
 
 
             LabelList.append(label)
@@ -209,11 +232,9 @@ def getOutputPathFromAnalisysType(year: str, analysisType: int):
     # Define o tipo de analise
     variableToUse = None
     if(analysisType == 1):
-        variableToUse = domesticoOutputPaths
+        variableToUse = comTurismoOutputPaths
     elif(analysisType == 2):
-        variableToUse = internacionalOutputPaths
-    elif(analysisType == 3):
-        variableToUse = ambosOutputPaths
+        variableToUse = semTurismoOutputPaths
     
     mapperTitle = str()
     outputPath = str()
@@ -246,13 +267,19 @@ def generateMapper(NPC: np.ndarray, Labels: np.ndarray, year: str, analysisType:
 
     # lens = mapper.project(
     #     NPC, 
-    #     projection=[0,1,4],
-    #     # scaler=StandardScaler()
+    #     projection=PCA(n_components=3),
+    #     scaler=None
     # )
+
+    pca = PCA(n_components=5)
+    lens = pca.fit_transform(NPC)
+    Explained_Variance = round(sum(list(pca.explained_variance_ratio_))*100, 2)
+    print( f'Explained variance: {Explained_Variance}' )
+
 
     # Criar um complexo simplicial
     # Utilizar 'lens' ao inves de 'NPC' caso seja utilizado o mapper.project acima
-    graph = mapper.map(NPC,
+    graph = mapper.map(lens,
                         cover=km.Cover(n_cubes=n_cubes, perc_overlap=perc_overlap),
                         clusterer= DBSCAN()
                         )
@@ -269,19 +296,19 @@ def generateMapper(NPC: np.ndarray, Labels: np.ndarray, year: str, analysisType:
 
 def main():
 
-    __PCA = False
+    __PCA = True
 
     # Ano da analise
     analisedYear = '2014'
     
     # Tipo da analise
-    analisysType = 3 # domestico (1), internacional (2), ambos (3)
+    analisysType = 1 # comTurismo (1), semTurismo (2)
 
     # Porcentagem de overlap
-    perc_overlap = 0.15
+    perc_overlap = 0.2
 
     # Quantidade de hypercubos
-    n_cubes = 10
+    n_cubes = 20
 
 
     # Le e cria os dados
@@ -292,6 +319,7 @@ def main():
     
     # Normaliza a nuvem de pontos
     normalizedPointCloud = normalize(pointCloud, norm='l2', axis=0)
+    
 
     if(__PCA == True):
         normalizedPointCloud = StandardScaler().fit_transform(normalizedPointCloud)
