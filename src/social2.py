@@ -4,11 +4,6 @@ github: @franreno
 
 Analise topologica de dados utilizando o mapper e dados da dengue, turismo domestico ou internacional
 
-To-Do:
-    - Decidir a utilizacao de alguma funcao de projecao
-    - Escolher o percentual de overlap e a quantidade de hypercubos
-    - Analisar os mappers gerados
-
 '''
 
 from typing import OrderedDict, Union
@@ -271,11 +266,10 @@ def generateMapper(NPC: np.ndarray, Labels: np.ndarray, year: str, analysisType:
     #     scaler=None
     # )
 
-    pca = PCA(n_components=5)
+    pca = PCA(n_components=4)
     lens = pca.fit_transform(NPC)
     Explained_Variance = round(sum(list(pca.explained_variance_ratio_))*100, 2)
     print( f'Explained variance: {Explained_Variance}' )
-
 
     # Criar um complexo simplicial
     # Utilizar 'lens' ao inves de 'NPC' caso seja utilizado o mapper.project acima
@@ -305,10 +299,10 @@ def main():
     analisysType = 1 # comTurismo (1), semTurismo (2)
 
     # Porcentagem de overlap
-    perc_overlap = 0.2
+    perc_overlap = 0.08
 
     # Quantidade de hypercubos
-    n_cubes = 20
+    n_cubes = 10
 
 
     # Le e cria os dados
